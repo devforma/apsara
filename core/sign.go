@@ -14,17 +14,19 @@ import (
 	"github.com/google/uuid"
 )
 
+var gmtTimeLoc = time.FixedZone("GMT", 0)
+
 // GMT格式时间字符串
 const DateTimeFormat = "Mon, 02 Jan 2006 15:04:05 GMT"
 
 // getTimestamp 请求时间戳
 func getTimestamp() string {
-	return time.Now().Format("2006-01-02T15:04:05Z")
+	return time.Now().UTC().Format("2006-01-02T15:04:05Z")
 }
 
-// getDateUTCString 请求头date取值
-func getDateUTCString() string {
-	return time.Now().Format(DateTimeFormat)
+// getDateGMTString 请求头date取值
+func getDateGMTString() string {
+	return time.Now().In(gmtTimeLoc).Format(DateTimeFormat)
 }
 
 // getNonce 签名唯一随机数，防止网络重放攻击

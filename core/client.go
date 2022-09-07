@@ -82,7 +82,7 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	if pathname != "" {
 		headers["x-ascm-pass-through-mode"] = "true"
 		queries["IsFormat"] = "false"
-		headers["Date"] = getDateUTCString()
+		headers["Date"] = getDateGMTString()
 
 		asoStringToSign := getASOStringToSign(method, headers["Date"], pathname)
 		headers["Authorization"] = getASOSignature(asoStringToSign, c.cfg.AasSecret)
@@ -107,7 +107,7 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 	// 完善请求头
 	headers := r.GetHeaders()
 	headers["user-agent"] = c.cfg.UserAgent
-	headers["date"] = getDateUTCString()
+	headers["date"] = getDateGMTString()
 	headers["accept"] = "application/json"
 	headers["x-ascm-product-ak"] = c.cfg.AccessKeyID
 	headers["x-acs-date"] = timestamp
