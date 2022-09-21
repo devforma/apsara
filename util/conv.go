@@ -1,6 +1,9 @@
 package util
 
-import "unsafe"
+import (
+	"encoding/json"
+	"unsafe"
+)
 
 func StringToBytes(str string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&struct {
@@ -14,4 +17,12 @@ func StringToBytes(str string) []byte {
 
 func BytesToString(bytes []byte) string {
 	return *(*string)(unsafe.Pointer(&bytes))
+}
+
+func JsonMarshal(data any) string {
+	d, err := json.Marshal(data)
+	if err != nil {
+		return ""
+	}
+	return BytesToString(d)
 }

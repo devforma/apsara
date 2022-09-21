@@ -17,7 +17,7 @@ type StdLogger struct {
 
 func NewLogger() *StdLogger {
 	return &StdLogger{
-		std: log.New(os.Stdout, "", log.LstdFlags),
+		std: log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile),
 	}
 }
 

@@ -14,4 +14,5 @@ type Config struct {
 	ReadTimeout       time.Duration
 	MaxIdleConns      int
 	UserAgent         string
+	EnableLog         bool
 }

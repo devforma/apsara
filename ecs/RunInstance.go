@@ -9,8 +9,8 @@ type RunInstanceRequest struct {
 func NewRunInstanceRequest() *RunInstanceRequest {
 	return &RunInstanceRequest{
 		core.EmbededRequest{
-			Product:    "ecs",
-			Version:    "2014-12-12",
+			Product:    "Ecs",
+			Version:    "2014-05-26",
 			Action:     "RunInstance",
 			Style:      core.RequestStyleRPC,
 			BizQueries: map[string]string{},

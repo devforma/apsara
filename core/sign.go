@@ -90,12 +90,12 @@ func getASOSignature(stringToSign string, secret string) string {
 // getASOStringToSign 构造RPC请求中的ASO待签名字符串
 func getASOStringToSign(method string, date string, pathname string) string {
 	//method + "\n" + md5Body + "\n" + contentType + "\n" + date + "\n" + resource
-	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s", method, "", "application/json", date, pathname)
+	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s", method, "", "", date, pathname)
 }
 
 // sortMap对map内元素按照字符序递增排序
 func sortMap(orig map[string]string) map[string]string {
-	keys := make([]string, len(orig))
+	var keys []string
 	orderedMap := make(map[string]string, len(orig))
 
 	for key := range orig {

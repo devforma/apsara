@@ -17,7 +17,7 @@ type Client struct {
 }
 
 // NewClient 创建ASAPI客户端
-func NewClient(cfg *Config, logger Logger) (*Client, error) {
+func NewClient(cfg *Config, logger Logger) *Client {
 	dialer := net.Dialer{
 		Timeout: cfg.ConnectionTimeout,
 	}
@@ -30,7 +30,7 @@ func NewClient(cfg *Config, logger Logger) (*Client, error) {
 				MaxIdleConns: cfg.MaxIdleConns,
 			},
 		},
-	}, nil
+	}
 }
 
 // buildRPCRequest 构造RPC请求类型
@@ -40,7 +40,7 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	method := r.GetMethod()
 
 	// 完善请求参数
-	queries := r.GetQuery()
+	queries := r.GetQueries()
 	queries["Timestamp"] = timestamp
 	queries["SignatureNonce"] = nonce
 	queries["Format"] = "JSON"
@@ -80,8 +80,6 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	// ASO请求，需要额外参数
 	pathname := r.GetPathname()
 	if pathname != "" {
-		headers["x-ascm-pass-through-mode"] = "true"
-		queries["IsFormat"] = "false"
 		headers["Date"] = getDateGMTString()
 
 		asoStringToSign := getASOStringToSign(method, headers["Date"], pathname)
@@ -95,6 +93,8 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	return req
 }
 
+// GET\n\napplication/json\nWed, 21 Sep 2022 10:49:57 GMT\n/aso/v3/physicalInfo/getMachineList
+
 // buildROARequest 构造ROA请求类型
 func (c *Client) buildROARequest(r Request) *http.Request {
 	timestamp := getTimestamp()
@@ -102,7 +102,7 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 	method := r.GetMethod()
 	pathname := r.GetPathname()
 	body := r.GetBody()
-	query := r.GetQuery()
+	query := r.GetQueries()
 
 	// 完善请求头
 	headers := r.GetHeaders()
@@ -151,39 +151,47 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 
 // DoRequest 发起请求
 func (c *Client) DoRequest(request Request, response Response) error {
-	var req *http.Request
-	var resp *http.Response
-	var err error
-	var content []byte
+	var (
+		req        *http.Request
+		statusCode int
+		err        error
+		content    []byte
+	)
 
-	for i := request.GetRetryTimes(); i >= 0; i-- {
-		if request.GetStyle() == RequestStyleRPC {
-			req = c.buildRPCRequest(request)
-		} else if request.GetStyle() == RequestStyleROA {
-			req = c.buildROARequest(request)
-		} else {
-			return errors.New("request style is not supported")
-		}
-
-		resp, err = c.httpClient.Do(req)
-		if err != nil {
-			c.logger.Error("request failed: %v", err)
-			continue
-		}
-		defer resp.Body.Close()
-
-		content, err = io.ReadAll(resp.Body)
-		if err != nil {
-			c.logger.Error("read response failed: %v", err)
-			continue
-		}
-
-		response.SetHeaders(nil)
-		response.SetBody(content)
-		response.SetStatusCode(resp.StatusCode)
-
-		break
+	if request.GetStyle() == RequestStyleRPC {
+		req = c.buildRPCRequest(request)
+	} else if request.GetStyle() == RequestStyleROA {
+		req = c.buildROARequest(request)
+	} else {
+		return errors.New("request style is not supported")
 	}
 
+	content, statusCode, err = c.request(req)
+	if err != nil {
+		if c.cfg.EnableLog {
+			c.logger.Error("DoRequest error: %v", err)
+		}
+		return err
+	}
+
+	response.SetHeaders(nil)
+	response.SetBody(content)
+	response.SetStatusCode(statusCode)
+
 	return err
+}
+
+func (c *Client) request(req *http.Request) ([]byte, int, error) {
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, -1, err
+	}
+	defer resp.Body.Close()
+
+	content, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, err
+	}
+
+	return content, resp.StatusCode, nil
 }

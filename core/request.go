@@ -1,6 +1,9 @@
 package core
 
-import "github.com/devforma/apsara/util"
+import (
+	"github.com/devforma/apsara/util"
+	"github.com/tidwall/gjson"
+)
 
 type RequestStyle string
 
@@ -11,12 +14,11 @@ const (
 
 type Request interface {
 	GetHeaders() map[string]string
-	GetQuery() map[string]string
+	GetQueries() map[string]string
 	GetBody() []byte
 	GetMethod() string
 	GetPathname() string
 	GetStyle() RequestStyle
-	GetRetryTimes() int
 }
 
 type Response interface {
@@ -106,4 +108,8 @@ func (r *EmbededResponse) SetHeaders(headers map[string]string) {
 
 func (r *EmbededResponse) SetBody(body []byte) {
 	r.Body = body
+}
+
+func (r *EmbededResponse) IsSuccess() bool {
+	return gjson.GetBytes(r.Body, "asapiSuccess").Bool()
 }
