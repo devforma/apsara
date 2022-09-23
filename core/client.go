@@ -178,6 +178,11 @@ func (c *Client) DoRequest(request Request, response Response) error {
 	response.SetBody(content)
 	response.SetStatusCode(statusCode)
 
+	// 请求中的参数传递到响应中
+	if cached := request.GetCachedParams(); cached != nil {
+		response.SetCachedRequestParams(cached)
+	}
+
 	return err
 }
 

@@ -2,8 +2,13 @@ package util
 
 import (
 	"encoding/json"
+	"strconv"
 	"unsafe"
 )
+
+func Int64ToString(num int64) string {
+	return strconv.FormatInt(num, 10)
+}
 
 func StringToBytes(str string) []byte {
 	return *(*[]byte)(unsafe.Pointer(&struct {

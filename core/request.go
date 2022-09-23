@@ -19,12 +19,14 @@ type Request interface {
 	GetMethod() string
 	GetPathname() string
 	GetStyle() RequestStyle
+	GetCachedParams() map[string]string
 }
 
 type Response interface {
 	SetStatusCode(code int)
 	SetHeaders(headers map[string]string)
 	SetBody(body []byte)
+	SetCachedRequestParams(map[string]string)
 }
 
 type EmbededRequest struct {
@@ -40,6 +42,7 @@ type EmbededRequest struct {
 	BizQueries      map[string]string
 	BizHeaders      map[string]string
 	Body            string
+	CachedParams    map[string]string
 }
 
 func (r *EmbededRequest) GetHeaders() map[string]string {
@@ -92,10 +95,15 @@ func (r *EmbededRequest) GetStyle() RequestStyle {
 	return r.Style
 }
 
+func (r *EmbededRequest) GetCachedParams() map[string]string {
+	return r.CachedParams
+}
+
 type EmbededResponse struct {
-	StatusCode int
-	Headers    map[string]string
-	Body       []byte
+	StatusCode          int
+	Headers             map[string]string
+	Body                gjson.Result
+	CachedRequestParams map[string]string
 }
 
 func (r *EmbededResponse) SetStatusCode(code int) {
@@ -107,9 +115,13 @@ func (r *EmbededResponse) SetHeaders(headers map[string]string) {
 }
 
 func (r *EmbededResponse) SetBody(body []byte) {
-	r.Body = body
+	r.Body = gjson.ParseBytes(body)
+}
+
+func (r *EmbededResponse) SetCachedRequestParams(params map[string]string) {
+	r.CachedRequestParams = params
 }
 
 func (r *EmbededResponse) IsSuccess() bool {
-	return gjson.GetBytes(r.Body, "asapiSuccess").Bool()
+	return r.Body.Get("asapiSuccess").Bool()
 }

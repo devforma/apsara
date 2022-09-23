@@ -56,7 +56,7 @@ type DescribeInstancesResponseItem struct {
 func (resp *DescribeInstancesResponse) GetInstances() []DescribeInstancesResponseItem {
 	var items []DescribeInstancesResponseItem
 
-	gjson.GetBytes(resp.Body, "Instances.Instance").ForEach(func(_, value gjson.Result) bool {
+	resp.Body.Get("Instances.Instance").ForEach(func(_, value gjson.Result) bool {
 		item := DescribeInstancesResponseItem{
 			Memory:             value.Get("Memory").Int(),
 			InstanceChargeType: value.Get("InstanceChargeType").String(),

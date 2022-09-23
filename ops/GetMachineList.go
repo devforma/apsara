@@ -40,6 +40,9 @@ type GetMachineListResponse struct {
 
 type GetMachineListResponseItem struct {
 	Project    string
+	Cluster    string
+	OS         string
+	SN         string
 	Hostname   string
 	IP         string
 	HWCPU      int64
@@ -51,10 +54,18 @@ type GetMachineListResponseItem struct {
 func (resp *GetMachineListResponse) GetMachineList() []GetMachineListResponseItem {
 	var items []GetMachineListResponseItem
 
-	gjson.GetBytes(resp.Body, "data").ForEach(func(_, value gjson.Result) bool {
-		if value.Get("is_vm").Bool() {
+	dataStr := resp.Body.Get("data").String()
+	if dataStr == "" {
+		return items
+	}
+
+	gjson.Parse(dataStr).ForEach(func(_, value gjson.Result) bool {
+		if !value.Get("is_vm").Bool() {
 			item := GetMachineListResponseItem{
 				Project:    value.Get("project").String(),
+				Cluster:    value.Get("cluster").String(),
+				OS:         value.Get("os").String(),
+				SN:         value.Get("sn").String(),
 				Hostname:   value.Get("hostname").String(),
 				IP:         value.Get("ip").String(),
 				HWCPU:      value.Get("hw_cpu").Int(),
