@@ -8,8 +8,9 @@ import (
 type RequestStyle string
 
 const (
-	RequestStyleROA RequestStyle = "ROA"
-	RequestStyleRPC RequestStyle = "RPC"
+	RequestStyleROA  RequestStyle = "ROA"
+	RequestStyleRPC  RequestStyle = "RPC"
+	RequestStyleODPS RequestStyle = "ODPS"
 )
 
 type Request interface {
@@ -65,11 +66,12 @@ func (r *EmbededRequest) GetHeaders() map[string]string {
 }
 
 func (r *EmbededRequest) GetQueries() map[string]string {
-	query := map[string]string{
-		"Product":  r.Product,
-		"Version":  r.Version,
-		"Action":   r.Action,
-		"RegionId": r.RegionID,
+	query := make(map[string]string)
+	if r.Style == RequestStyleRPC {
+		query["Product"] = r.Product
+		query["Version"] = r.Version
+		query["Action"] = r.Action
+		query["RegionId"] = r.RegionID
 	}
 
 	for k, v := range r.BizQueries {

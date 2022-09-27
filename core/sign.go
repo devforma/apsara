@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/devforma/apsara/util"
 	"github.com/google/uuid"
 )
 
@@ -49,12 +50,12 @@ func getROAStringToSign(method string, headers map[string]string, queries map[st
 	if len(queries) > 0 {
 		resourceStringBuilder.WriteString("?")
 
-		queries = sortMap(queries)
-		for key, value := range queries {
+		queryKeys := sortMap(queries)
+		for _, key := range queryKeys {
 			resourceStringBuilder.WriteString(key)
-			if value != "" {
+			if queries[key] != "" {
 				resourceStringBuilder.WriteString("=")
-				resourceStringBuilder.WriteString(value)
+				resourceStringBuilder.WriteString(queries[key])
 			}
 			resourceStringBuilder.WriteString("&")
 		}
@@ -64,8 +65,8 @@ func getROAStringToSign(method string, headers map[string]string, queries map[st
 
 	// header处理
 	var headerStringBuilder strings.Builder
-	headers = sortMap(headers)
-	for key, value := range headers {
+	headerKeys := sortMap(headers)
+	for _, key := range headerKeys {
 		// 过滤掉非x-acs-开头的header
 		if !strings.HasPrefix(key, "x-acs-") {
 			continue
@@ -73,12 +74,12 @@ func getROAStringToSign(method string, headers map[string]string, queries map[st
 
 		headerStringBuilder.WriteString(key)
 		headerStringBuilder.WriteString(":")
-		headerStringBuilder.WriteString(value)
+		headerStringBuilder.WriteString(headers[key])
 		headerStringBuilder.WriteString("\n")
 	}
 	headerString := headerStringBuilder.String()
 
-	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s%s", method, headers["accept"], headers["content-md5"], headers["content-type"], headers["date"], headerString, resourceString)
+	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s%s", method, headers["accept"], headers["content-md5"], headers["content-type"], headers["x-acs-date"], headerString, resourceString)
 }
 
 // getASOSignature 生成RPC请求中的ASO签名
@@ -94,27 +95,19 @@ func getASOStringToSign(method string, date string, pathname string) string {
 }
 
 // sortMap对map内元素按照字符序递增排序
-func sortMap(orig map[string]string) map[string]string {
+func sortMap(orig map[string]string) []string {
 	var keys []string
-	orderedMap := make(map[string]string, len(orig))
 
 	for key := range orig {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
-
-	for _, key := range keys {
-		orderedMap[key] = orig[key]
-	}
-
-	return orderedMap
+	return keys
 }
 
 // getRPCSignature 生成RPC请求的签名
-func getRPCSignature(stringToSign string, accessKeySecret string) string {
-	secret := accessKeySecret + "&"
-	signedBytes := shaHmac1(stringToSign, secret)
-	return base64.StdEncoding.EncodeToString(signedBytes)
+func getRPCSignature(stringToSign string, secret string) string {
+	return base64.StdEncoding.EncodeToString(shaHmac1(stringToSign, secret+"&"))
 }
 
 // getRpcStringToSign 构造RPC请求待签名字符串
@@ -129,8 +122,10 @@ func getRpcStringToSign(method string, queryString string) string {
 // getQueryString 构造query string
 func getQueryString(queries map[string]string) string {
 	urlEncoder := url.Values{}
-	for key, value := range queries {
-		urlEncoder.Add(key, value)
+
+	queryKeys := sortMap(queries)
+	for _, key := range queryKeys {
+		urlEncoder.Add(key, queries[key])
 	}
 
 	return urlEncoder.Encode()
@@ -139,6 +134,6 @@ func getQueryString(queries map[string]string) string {
 // shaHmac1 shahmac1签名
 func shaHmac1(source, secret string) []byte {
 	hmac := hmac.New(sha1.New, []byte(secret))
-	hmac.Write([]byte(source))
+	hmac.Write(util.StringToBytes(source))
 	return hmac.Sum(nil)
 }

@@ -52,7 +52,6 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	}
 
 	// 构造query string
-	queries = sortMap(queries)
 	queryString := getQueryString(queries)
 
 	// 签名
@@ -93,9 +92,7 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	return req
 }
 
-// GET\n\napplication/json\nWed, 21 Sep 2022 10:49:57 GMT\n/aso/v3/physicalInfo/getMachineList
-
-// buildROARequest 构造ROA请求类型
+// buildROARequest 构造ROA请求类型 没走通
 func (c *Client) buildROARequest(r Request) *http.Request {
 	timestamp := getTimestamp()
 	nonce := getNonce()
@@ -109,6 +106,7 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 	headers["user-agent"] = c.cfg.UserAgent
 	headers["date"] = getDateGMTString()
 	headers["accept"] = "application/json"
+	headers["content-type"] = "application/json"
 	headers["x-ascm-product-ak"] = c.cfg.AccessKeyID
 	headers["x-acs-date"] = timestamp
 	headers["x-acs-caller-sdk-source"] = c.cfg.UserAgent
@@ -118,19 +116,16 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 	if headers["x-acs-regionid"] == "" {
 		headers["x-acs-regionid"] = c.cfg.RegionID
 	}
-	if body != nil {
-		headers["content-type"] = "application/json; charset=utf-8"
-	}
 
 	// 构造签名
 	stringToSign := getROAStringToSign(method, headers, query, pathname)
-	headers["authorization"] = fmt.Sprintf("acs %s:%s", c.cfg.AccessKeyID, getROASignature(stringToSign, c.cfg.AccessKeySecret))
+	headers["Authorization"] = fmt.Sprintf("acs %s:%s", c.cfg.AccessKeyID, getROASignature(stringToSign, c.cfg.AccessKeySecret))
 
-	url := fmt.Sprintf("%s%s", c.cfg.AsapiEndpoint, pathname)
+	url := c.cfg.AsapiEndpoint + "/roa" + pathname
 
 	// 构造query string
-	queryString := getQueryString(query)
-	if len(queryString) > 0 {
+	if len(query) > 0 {
+		queryString := getQueryString(query)
 		if strings.Contains(url, "?") {
 			url = fmt.Sprintf("%s&%s", url, queryString)
 		} else {
@@ -146,7 +141,7 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 		req.Header.Set(key, value)
 	}
 
-	return nil
+	return req
 }
 
 // DoRequest 发起请求
