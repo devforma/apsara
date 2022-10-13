@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -26,6 +27,9 @@ func NewClient(cfg *Config, logger Logger) *Client {
 		cfg:    cfg,
 		httpClient: &http.Client{
 			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
 				DialContext:  dialer.DialContext,
 				MaxIdleConns: cfg.MaxIdleConns,
 			},
@@ -85,6 +89,45 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 		headers["Authorization"] = getASOSignature(asoStringToSign, c.cfg.AasSecret)
 	}
 
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	return req
+}
+
+// buildBCCRequest 构造BCC请求类型
+func (c *Client) buildBCCRequest(r Request) *http.Request {
+	method := r.GetMethod()
+	pathname := r.GetPathname()
+	body := r.GetBody()
+	query := r.GetQueries()
+
+	// 完善请求头
+	headers := r.GetHeaders()
+	headers["x-auth-app"] = c.cfg.Bcc.AppName
+	headers["x-auth-key"] = c.cfg.Bcc.AppKey
+	headers["x-auth-user"] = c.cfg.Bcc.Account
+	headers["x-auth-passwd"] = getBCCSignature(c.cfg.Bcc.Account, c.cfg.Bcc.AccountKey)
+	if body != nil {
+		headers["Content-Type"] = "application/json"
+	}
+
+	// 构造query string
+	url := c.cfg.Bcc.Endpoint + pathname
+	if len(query) > 0 {
+		queryString := getQueryString(query)
+		if strings.Contains(url, "?") {
+			url = fmt.Sprintf("%s&%s", url, queryString)
+		} else {
+			url = fmt.Sprintf("%s?%s", url, queryString)
+		}
+	}
+
+	// 构造请求
+	req, _ := http.NewRequest(method, url, bytes.NewReader(body))
+
+	// 设置请求头
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
@@ -157,6 +200,8 @@ func (c *Client) DoRequest(request Request, response Response) error {
 		req = c.buildRPCRequest(request)
 	} else if request.GetStyle() == RequestStyleROA {
 		req = c.buildROARequest(request)
+	} else if request.GetStyle() == RequestStyleBCC {
+		req = c.buildBCCRequest(request)
 	} else {
 		return errors.New("request style is not supported")
 	}

@@ -2,6 +2,7 @@ package core
 
 import (
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
@@ -80,6 +81,16 @@ func getROAStringToSign(method string, headers map[string]string, queries map[st
 	headerString := headerStringBuilder.String()
 
 	return fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s%s", method, headers["accept"], headers["content-md5"], headers["content-type"], headers["x-acs-date"], headerString, resourceString)
+}
+
+// getBCCSignature 生成BCC请求中的header签名
+func getBCCSignature(account, accountKey string) string {
+	timeStr := time.Now().Format("20060102")
+	sign := md5.New()
+	sign.Write(util.StringToBytes(account))
+	sign.Write(util.StringToBytes(timeStr))
+	sign.Write(util.StringToBytes(accountKey))
+	return hex.EncodeToString(sign.Sum(nil))
 }
 
 // getASOSignature 生成RPC请求中的ASO签名

@@ -14,14 +14,16 @@ type GetOdpsEngineListResponse struct {
 	core.EmbededResponse
 }
 
-func NewGetOdpsEngineListRequest(organizationId int64, pageNum, pageSize int64) *GetOdpsEngineListRequest {
+// NewGetOdpsEngineListRequest 获取odps projects列表
+func NewGetOdpsEngineListRequest(organizationId, resourceGroupId int64, pageNum, pageSize int64) *GetOdpsEngineListRequest {
 	return &GetOdpsEngineListRequest{
 		core.EmbededRequest{
-			Product:        "ascm",
-			Version:        "2019-05-10",
-			Action:         "GetOdpsEngineList",
-			Style:          core.RequestStyleRPC,
-			OrganizationID: util.Int64ToString(organizationId),
+			Product:         "ascm",
+			Version:         "2019-05-10",
+			Action:          "GetOdpsEngineList",
+			Style:           core.RequestStyleRPC,
+			OrganizationID:  util.Int64ToString(organizationId),
+			ResourceGroupID: util.Int64ToString(resourceGroupId),
 			BizQueries: map[string]string{
 				"CurrentPage": util.Int64ToString(pageNum),
 				"PageSize":    util.Int64ToString(pageSize),

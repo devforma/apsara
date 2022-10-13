@@ -8,9 +8,9 @@ import (
 type RequestStyle string
 
 const (
-	RequestStyleROA  RequestStyle = "ROA"
-	RequestStyleRPC  RequestStyle = "RPC"
-	RequestStyleODPS RequestStyle = "ODPS"
+	RequestStyleROA RequestStyle = "ROA"
+	RequestStyleRPC RequestStyle = "RPC"
+	RequestStyleBCC RequestStyle = "BCC"
 )
 
 type Request interface {
