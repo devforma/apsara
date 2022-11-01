@@ -33,9 +33,11 @@ func NewGetOdpsUserInfoRequest(organizationId int64, userName string) *GetOdpsUs
 }
 
 type OdpsUserInfo struct {
-	UserName   string
-	PrimaryKey string
-	UserId     string
+	UserName        string
+	PrimaryKey      string
+	UserId          string
+	AccessKeyID     string
+	AccessKeySecret string
 }
 
 func (resp *GetOdpsUserInfoResponse) GetOdpsUserInfo() *OdpsUserInfo {
@@ -43,9 +45,11 @@ func (resp *GetOdpsUserInfoResponse) GetOdpsUserInfo() *OdpsUserInfo {
 	resp.Body.Get("data").ForEach(func(_, value gjson.Result) bool {
 		if userName := value.Get("userName").String(); userName == resp.CachedRequestParams["UserName"] {
 			found = &OdpsUserInfo{
-				UserName:   userName,
-				PrimaryKey: value.Get("aasPk").String(),
-				UserId:     value.Get("userId").String(),
+				UserName:        userName,
+				PrimaryKey:      value.Get("aasPk").String(),
+				UserId:          value.Get("userId").String(),
+				AccessKeyID:     value.Get("ak").String(),
+				AccessKeySecret: value.Get("sk").String(),
 			}
 			return false
 		}

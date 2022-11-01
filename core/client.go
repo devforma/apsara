@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type Client struct {
@@ -26,6 +27,7 @@ func NewClient(cfg *Config, logger Logger) *Client {
 		logger: logger,
 		cfg:    cfg,
 		httpClient: &http.Client{
+			Timeout: 5 * time.Second,
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: true,
