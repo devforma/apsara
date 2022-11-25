@@ -21,6 +21,8 @@ type Request interface {
 	GetPathname() string
 	GetStyle() RequestStyle
 	GetCachedParams() map[string]string
+	SetAccessKey(string, string)
+	GetAccessKey() (string, string)
 }
 
 type Response interface {
@@ -44,6 +46,17 @@ type EmbededRequest struct {
 	BizHeaders      map[string]string
 	Body            string
 	CachedParams    map[string]string
+	AccessKeyID     string
+	AccessKeySecret string
+}
+
+func (r *EmbededRequest) SetAccessKey(accessKeyID, accessKeySecret string) {
+	r.AccessKeyID = accessKeyID
+	r.AccessKeySecret = accessKeySecret
+}
+
+func (r *EmbededRequest) GetAccessKey() (string, string) {
+	return r.AccessKeyID, r.AccessKeySecret
 }
 
 func (r *EmbededRequest) GetHeaders() map[string]string {

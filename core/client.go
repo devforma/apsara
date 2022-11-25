@@ -45,6 +45,13 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	nonce := getNonce()
 	method := r.GetMethod()
 
+	accessKeyID := c.cfg.AccessKeyID
+	accessKeySecret := c.cfg.AccessKeySecret
+	if ak, sk := r.GetAccessKey(); ak != "" && sk != "" {
+		accessKeyID = ak
+		accessKeySecret = sk
+	}
+
 	// 完善请求参数
 	queries := r.GetQueries()
 	queries["Timestamp"] = timestamp
@@ -52,7 +59,7 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	queries["Format"] = "JSON"
 	queries["SignatureMethod"] = "HMAC-SHA1"
 	queries["SignatureVersion"] = "1.0"
-	queries["AccessKeyId"] = c.cfg.AccessKeyID
+	queries["AccessKeyId"] = accessKeyID
 	if queries["RegionId"] == "" {
 		queries["RegionId"] = c.cfg.RegionID
 	}
@@ -62,7 +69,7 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 
 	// 签名
 	stringToSign := getRpcStringToSign(method, queryString)
-	queries["Signature"] = getRPCSignature(stringToSign, c.cfg.AccessKeySecret)
+	queries["Signature"] = getRPCSignature(stringToSign, accessKeySecret)
 
 	// 构造完整url
 	url := fmt.Sprintf("%s?%s", c.cfg.AsapiEndpoint, queryString)
@@ -72,7 +79,7 @@ func (c *Client) buildRPCRequest(r Request) *http.Request {
 	headers := r.GetHeaders()
 	headers["user-agent"] = c.cfg.UserAgent
 	headers["accept"] = "application/json"
-	headers["x-ascm-product-ak"] = c.cfg.AccessKeyID
+	headers["x-ascm-product-ak"] = accessKeyID
 	headers["x-acs-date"] = timestamp
 	headers["x-acs-caller-sdk-source"] = c.cfg.UserAgent
 	headers["x-acs-signature-nonce"] = nonce
@@ -146,13 +153,20 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 	body := r.GetBody()
 	query := r.GetQueries()
 
+	accessKeyID := c.cfg.AccessKeyID
+	accessKeySecret := c.cfg.AccessKeySecret
+	if ak, sk := r.GetAccessKey(); ak != "" && sk != "" {
+		accessKeyID = ak
+		accessKeySecret = sk
+	}
+
 	// 完善请求头
 	headers := r.GetHeaders()
 	headers["user-agent"] = c.cfg.UserAgent
 	headers["date"] = getDateGMTString()
 	headers["accept"] = "application/json"
 	headers["content-type"] = "application/json"
-	headers["x-ascm-product-ak"] = c.cfg.AccessKeyID
+	headers["x-ascm-product-ak"] = accessKeyID
 	headers["x-acs-date"] = timestamp
 	headers["x-acs-caller-sdk-source"] = c.cfg.UserAgent
 	headers["x-acs-signature-nonce"] = nonce
@@ -164,7 +178,7 @@ func (c *Client) buildROARequest(r Request) *http.Request {
 
 	// 构造签名
 	stringToSign := getROAStringToSign(method, headers, query, pathname)
-	headers["Authorization"] = fmt.Sprintf("acs %s:%s", c.cfg.AccessKeyID, getROASignature(stringToSign, c.cfg.AccessKeySecret))
+	headers["Authorization"] = fmt.Sprintf("acs %s:%s", accessKeyID, getROASignature(stringToSign, accessKeySecret))
 
 	url := c.cfg.AsapiEndpoint + "/roa" + pathname
 
